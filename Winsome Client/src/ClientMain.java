@@ -30,7 +30,7 @@ public class ClientMain {
             serverObject.register("matteo", "qwerty", new ArrayList<String>(Arrays.asList("musica", "storia", "nuoto")));
 
         } catch (RemoteException | NotBoundException | NullPointerException | UserAlrExiException | InvalidUsernameException e) {
-            e.printStackTrace();
+            e.printStackTrace(); 
         }
         
     }
