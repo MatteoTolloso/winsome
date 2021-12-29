@@ -1,10 +1,21 @@
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
+
+import com.fasterxml.jackson.annotation.*;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.*;
 
 
 public class Database {
@@ -396,6 +407,120 @@ public class Database {
         }
 
         return usr.getTransactions();   // clone fatta da Utente
+    }
+
+    public void jsonBackup(String dirPath) throws NullPointerException, InvalidPathException, IOException{
+
+        if (dirPath == null) throw new NullPointerException();
+
+        File dir = new File(dirPath);
+		
+        if (!dir.isDirectory()) throw new InvalidPathException(dirPath, dirPath);
+        
+        File fileUsers = new File(dirPath + "/usersBackup.json");
+        File filePosts = new File(dirPath + "/postsBackup.json");
+
+        if (filePosts.exists()) filePosts.delete();
+        if (fileUsers.exists()) fileUsers.delete();
+
+        filePosts.createNewFile();
+        fileUsers.createNewFile();
+
+        
+        ObjectMapper mapper = new ObjectMapper();
+		mapper.enable(SerializationFeature.INDENT_OUTPUT);
+		
+		mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+
+        // scrivo gli utenti
+
+        ArrayList<Utente> utenti = new ArrayList<Utente>(usersMap.values());
+
+        byte[] content = mapper.writeValueAsBytes(utenti);
+
+        try (FileChannel outChannel = FileChannel.open(Paths.get(fileUsers.getAbsolutePath()), StandardOpenOption.WRITE)) {
+			ByteBuffer bb = ByteBuffer.wrap(content);
+			
+            while (bb.hasRemaining()){
+				outChannel.write(bb);
+            }
+		}        
+        
+        // scrivo i post
+
+        ArrayList<Post> post = new ArrayList<Post>(postMap.values());
+
+        content = mapper.writeValueAsBytes(post);
+
+        try (FileChannel outChannel = FileChannel.open(Paths.get(filePosts.getAbsolutePath()), StandardOpenOption.WRITE)) {
+			ByteBuffer bb = ByteBuffer.wrap(content);
+			
+            while (bb.hasRemaining()){
+				outChannel.write(bb);
+            }
+		}
+		
+    }
+
+    public void jsonRestore(String dirPath)  throws NullPointerException, InvalidPathException, IOException{
+        
+        if (dirPath == null) throw new NullPointerException();
+
+        File dir = new File(dirPath);
+		
+        if (!dir.isDirectory()) throw new InvalidPathException(dirPath, dirPath);
+        
+        File fileUsers = new File(dirPath + "/usersBackup.json");
+        File filePosts = new File(dirPath + "/postsBackup.json");
+
+        if(!fileUsers.exists()) throw new InvalidPathException(dirPath, dirPath);
+        if(!filePosts.exists()) throw new InvalidPathException(dirPath, dirPath);
+
+        ByteBuffer buffer = ByteBuffer.allocate((int) Math.pow(2, 30));
+
+        // leggi Utenti
+
+		try ( FileChannel inChannel= FileChannel.open(Paths.get(fileUsers.getAbsolutePath()), StandardOpenOption.READ) ) {
+			boolean stop = false;
+			while (!stop) {
+				if (inChannel.read(buffer) == -1){
+					stop = true;
+				}
+			}
+		}
+
+		ObjectMapper mapper = new ObjectMapper();
+		
+		mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
+
+		ArrayList<Utente> utenti;
+		
+		utenti = mapper.reader().forType(new TypeReference<ArrayList<Utente>>() {}).readValue(buffer.array());	 // lettura dal buffer
+		
+		for(Utente u : utenti){
+            usersMap.put(u.getUsername(), u);
+        }
+
+        // leggi post
+
+        buffer.clear();
+
+        try ( FileChannel inChannel= FileChannel.open(Paths.get(filePosts.getAbsolutePath()), StandardOpenOption.READ) ) {
+			boolean stop = false;
+			while (!stop) {
+				if (inChannel.read(buffer) == -1){
+					stop = true;
+				}
+			}
+		}
+
+		ArrayList<Post> posts;
+		
+		posts = mapper.reader().forType(new TypeReference<ArrayList<Post>>() {}).readValue(buffer.array());	 // lettura dal buffer
+		
+		for(Post p : posts){
+            postMap.put(p.getID(), p);
+        }
     }
     
     // debug del database

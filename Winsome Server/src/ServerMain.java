@@ -1,7 +1,9 @@
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.InvalidPathException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -25,13 +27,19 @@ public class ServerMain{
 
         System.out.println("Server avviato");
 
-        startRMIRegister();
+        //test_followUser();
+        //test_rewinPost();
 
         try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
+            //db.jsonBackup(".");
+            db.jsonRestore(".");
+        } catch (InvalidPathException | NullPointerException | IOException e) {
             e.printStackTrace();
         }
+
+
+
+        //startRMIRegister();
 
         db.print();
         
@@ -413,25 +421,6 @@ public class ServerMain{
         } catch (NullPointerException | UserNotFoundException |InvalidUsernameException e) {
             e.printStackTrace();
         }
-
-        
-        System.out.println("feed di pluto :");
-        ArrayList<Post> feed = null;
-        try {
-            feed = db.showFeed("pluto");
-        } catch (NullPointerException | UserNotFoundException e) {
-            e.printStackTrace();
-        }
-        //for(Post p : feed) p.print();
-
-        System.out.println("blog di pippo :");
-        ArrayList<Post> blog = null;
-        try {
-            blog = db.viewBlog("pippo");
-        } catch (NullPointerException | UserNotFoundException e) {
-            e.printStackTrace();
-        }
-        //for(Post p : blog) p.print();
 
 
     }

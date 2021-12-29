@@ -24,6 +24,10 @@ public class Post {
         this.body = body;
     }
 
+    public Post(){
+        
+    }
+
     public Post(Post p){
         this.id = p.getID();
         this.author = p.getAuthor();

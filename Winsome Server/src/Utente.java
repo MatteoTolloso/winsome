@@ -19,6 +19,10 @@ public class Utente {
         this.tags = new ArrayList<String>(tags);
     }
 
+    public Utente(){
+        
+    }
+
     public void print(){
         System.out.println("Username: "+ username);
         System.out.println("Password: "+ password);
