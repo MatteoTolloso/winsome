@@ -12,4 +12,11 @@ public class Comment{
         System.out.println("        Username: "+ username);
         System.out.println("        Body: "+ body);
     }
+
+    String getUsername(){
+        return username;
+    }
+    String getBody(){
+        return body;
+    }
 }

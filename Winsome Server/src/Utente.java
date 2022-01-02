@@ -83,7 +83,7 @@ public class Utente {
     }
 
     public synchronized void addPost(String postID){
-        if (postID == null) return;
+        if ((postID == null) || posts.contains(postID)) return;
         posts.add(postID);
     }
 

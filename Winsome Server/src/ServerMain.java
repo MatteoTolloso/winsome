@@ -27,8 +27,7 @@ public class ServerMain{
 
         System.out.println("Server avviato");
 
-        test_createPost();
-        test_followUser();
+        test();
 
         /*
         try {
@@ -97,6 +96,51 @@ public class ServerMain{
         }
 		
 	}
+
+    public static void test(){
+
+        try {
+            db.register("matteo", "q", new ArrayList<String>(Arrays.asList("musica", "storia", "nuoto")));
+        } catch (NullPointerException | UserAlrExiException | InvalidUsernameException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            db.register("pippo", "q", new ArrayList<String>(Arrays.asList("musica", "storia", "nuoto")));
+        } catch (NullPointerException | UserAlrExiException | InvalidUsernameException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            db.register("pluto", "q", new ArrayList<String>(Arrays.asList("musica", "storia", "nuoto")));
+        } catch (NullPointerException | UserAlrExiException | InvalidUsernameException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            db.followUser("matteo", "pippo");
+        } catch (NullPointerException | UserNotFoundException | InvalidUsernameException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            db.followUser("pippo", "pluto");
+        } catch (NullPointerException | UserNotFoundException | InvalidUsernameException e) {
+            e.printStackTrace();
+        }
+
+        try {
+            db.createPost("pluto", "primo opst", "ciaooo");
+        } catch (NullPointerException | UserNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        
+
+        
+
+
+    }
     
 
     public static void test_listUsers(){

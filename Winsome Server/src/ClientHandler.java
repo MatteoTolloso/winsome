@@ -97,6 +97,26 @@ public class ClientHandler implements Runnable {
                         deleteHandler(tokenizer, outToClient);
                         break;
                     }
+                    case "rewin":{
+                        rewindpostHandler(tokenizer, outToClient);
+                        break;
+                    }
+                    case "ratepost":{
+                        ratepostHandler(tokenizer, outToClient);;
+                        break;
+                    }
+                    case "comment":{
+                        commentHandler(requestMessageLine, tokenizer, outToClient);
+                        break;
+                    }
+                    case "wallet":{
+                        walletHandler(outToClient);
+                        break;
+                    }
+                    case "walletbtc":{
+                        walletbtcHandler(outToClient);
+                        break;
+                    }
 
 
                     default:{
@@ -124,12 +144,156 @@ public class ClientHandler implements Runnable {
 
     }
 
+    void walletbtcHandler(DataOutputStream outToClient){
+        //TODO
+    }
+
+    void walletHandler(DataOutputStream outToClient) throws IOException{
+        StringBuilder response = new StringBuilder();
+
+        try {
+            response.append(Double.toString( db.getWallet(username) ) ).append(NEW);
+        } catch (NullPointerException | UserNotFoundException e) { // impossibile
+            throw new IOException();
+        }
+
+        response.insert(0, Integer.toString(response.length()) + NEW );
+        outToClient.writeBytes(response.toString());
+
+    }
+
+    void commentHandler(String messageLine, StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
+        
+        StringBuilder response = new StringBuilder();
+        StringTokenizer tokenizer2 = new StringTokenizer(messageLine, "\"");
+
+        if((tokenizer.countTokens() < 2 ) || (tokenizer2.countTokens() < 2)){
+            response.append("Uso: comment <postId> \"<testo>\"").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+
+        String postID = tokenizer.nextToken();
+        tokenizer2.nextToken(); // prima parte del messaggio
+        String contenuto = tokenizer2.nextToken();   // messaggio tra virgolette
+
+        try {
+            db.addComment(username, postID, contenuto);
+        } catch (NullPointerException e) {
+            throw new IOException();
+        } catch (UserNotFoundException e) {
+            throw new IOException();
+        } catch (PostNotFoundException e) {
+            response.append("Il post non esiste o e' stato eliminato").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        } catch (NotAllowedException e) {
+            response.append("Non puoi commentare questo post").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+
+        response.append("OK").append(NEW);
+        response.insert(0, Integer.toString(response.length()) + NEW );
+        outToClient.writeBytes(response.toString());
+        return;
+
+    }
+    void ratepostHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
+        StringBuilder response = new StringBuilder();
+
+        if (tokenizer.countTokens() < 2){
+            response.append("Uso: rate <idPost> <voto>").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+        String postID = tokenizer.nextToken();
+        String voteStr = tokenizer.nextToken();
+        int vote;
+        try{
+            vote= Integer.parseInt(voteStr);
+        }
+        catch (Exception e){
+            response.append("Il voto può essere +1 o -1").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+
+        try {
+            db.ratePost(username, postID, (vote > 0) ? true : false);
+        } catch (NullPointerException | UserNotFoundException e) {  // impossibile
+            e.printStackTrace();
+            throw new IOException();
+        } catch (PostNotFoundException e) {
+            response.append("Il post non esiste o e' stato rimosso").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        } catch (NotAllowedException e) {
+            response.append("Non puoi votare questo post").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+
+        response.append("OK").append(NEW);
+        response.insert(0, Integer.toString(response.length()) + NEW );
+        outToClient.writeBytes(response.toString());
+        return;
+
+    }
+
+    void rewindpostHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
+
+        StringBuilder response = new StringBuilder();
+
+        if (tokenizer.countTokens() < 1){
+            response.append("Uso: rewind <idPost>").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+        String postID = tokenizer.nextToken();
+
+        try {
+            db.rewinPost(username, postID);
+        } catch (NullPointerException e) {
+            
+            e.printStackTrace();
+        } catch (UserNotFoundException e) { // impossibile  
+            e.printStackTrace();
+            throw new IOException();
+        } catch (PostNotFoundException e) { 
+            response.append("Il post non esiste o è stato rimosso").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        } catch (NotAllowedException e) {
+            response.append("Questo post non è nel tuo feed").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+
+        response.append("OK").append(NEW);
+        response.insert(0, Integer.toString(response.length()) + NEW );
+        outToClient.writeBytes(response.toString());
+        return;
+
+
+    }
+
     void deleteHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
         
         StringBuilder response = new StringBuilder();
 
         if (tokenizer.countTokens() < 1){
-            response.append("Uso: <idpost>").append(NEW);
+            response.append("Uso: delete <idPost>").append(NEW);
             response.insert(0, Integer.toString(response.length()) + NEW );
             outToClient.writeBytes(response.toString());
             return;
@@ -170,7 +334,7 @@ public class ClientHandler implements Runnable {
         StringBuilder response = new StringBuilder();
 
         if (tokenizer.countTokens() < 1){
-            response.append("Uso: <idpost>").append(NEW);
+            response.append("Uso: show post <idpost>").append(NEW);
             response.insert(0, Integer.toString(response.length()) + NEW );
             outToClient.writeBytes(response.toString());
             return;
@@ -197,6 +361,12 @@ public class ClientHandler implements Runnable {
         response.append("Autore: ").append(p.getAuthor()).append(NEW);
         response.append("Titolo: ").append(p.getTitle()).append(NEW);
         response.append("Contenuto: ").append(p.getBody()).append(NEW);
+        response.append("Voti positivi: ").append( Integer.toString( p.getUpVote().size() )).append(NEW);
+        response.append("Voti negativi: ").append( Integer.toString( p.getDownVote().size() )).append(NEW);
+        response.append("Commenti: ").append(NEW);
+        for(Comment c : p.getComments()){
+            response.append("   ").append(c.getUsername()).append(": ").append(c.getBody()).append(NEW);
+        }
         response.append("--------").append(NEW);
         response.insert(0, Integer.toString(response.length()) + NEW );
         outToClient.writeBytes(response.toString());
@@ -237,10 +407,10 @@ public class ClientHandler implements Runnable {
 
         StringTokenizer tokenizer = new StringTokenizer(messageLine,"\"" );
 
-        System.out.println( tokenizer.nextToken() );// dovrebbe essere la richiesta "post" 
+        tokenizer.nextToken();// dovrebbe essere la richiesta "post" 
 
         if (tokenizer.countTokens() < 3){
-            response.append("Uso: post <titolo> <contenuto>").append(NEW);
+            response.append("Uso: post \"<titolo>\" \"<contenuto>\"").append(NEW);
             response.insert(0, Integer.toString(response.length()) + NEW );
             outToClient.writeBytes(response.toString());
             return;

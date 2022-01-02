@@ -171,7 +171,7 @@ public class Database {
                 posts.add( new Post ( postMap.get(s) )  );  // recupero il post attraverso la mapPost, effettuo una clone e lo aggiungo alla lista da ritornare
             } 
             catch(NullPointerException e){
-                // vuol dire che <<reqFrom>> ha fatto il rewind di un post che successivamente è stato eliminato dal suo autore
+                // vuol dire che <<reqFrom>> ha fatto il rewin di un post che successivamente è stato eliminato dal suo autore
             }  
         }
 
@@ -227,11 +227,11 @@ public class Database {
         // usersMap.get(username).removePost(postID);
 
         // non rimuovo il post dalla lista di postID del creatore, perchè voglio che rimanga una minima traccia dell'esisteza di quel post, 
-        // inoltre in questo modo mantengo la coerenza con il fatto che nemmeno gli id dei post rewind e poi eliminati vengono eliminati
+        // inoltre in questo modo mantengo la coerenza con il fatto che nemmeno gli id dei post rewin e poi eliminati vengono eliminati
         // le eccezioni che questi post eliminati generano vengono gestite con semplicità nei metodi viewBlog e showPost 
 
         // andare ad eliminare completamente tutte le tracce del post vorrebbe dire eliminarlo da tutti i feed dei followers e se qualcuno di
-        // essi ha fatto il rewind, anche da tutti i rispettivi followers
+        // essi ha fatto il rewin, anche da tutti i rispettivi followers
 
     }
 
@@ -292,7 +292,7 @@ public class Database {
         String authorUsername = pst.getAuthor();    // autore originale del post
 
         for (String f : followers){ // metto il post nel feed di tutti i followers di <<reqFrom>>
-            if(f.equals(authorUsername)){  //tranne in quello dell'autore stesso 
+            if(!f.equals(authorUsername)){  //tranne in quello dell'autore stesso 
                 usersMap.get(f).addToFeed(postID);
             }
         }
@@ -345,7 +345,7 @@ public class Database {
         Post pst;
         try{
             pst = postMap.get(postID);
-        } catch(Exception e){
+        } catch(NullPointerException e){
             throw new PostNotFoundException();
         }
 
