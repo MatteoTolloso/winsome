@@ -20,7 +20,7 @@ public class Utente {
     }
 
     public Utente(){
-        
+
     }
 
     public void print(){
@@ -106,6 +106,10 @@ public class Utente {
 
     public synchronized ArrayList<String> getFeed(){
         return new ArrayList<String>(this.feed); 
+    }
+
+    public synchronized String getPassword(){
+        return this.password;
     }
 
     public synchronized double getWallet(){

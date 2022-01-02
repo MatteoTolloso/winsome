@@ -247,43 +247,23 @@ public class Database {
 
         for(String post : feedIDs){
             try{
-                feed.add(postMap.get(post));
+                Post p = postMap.get(post);
+                if(p != null) feed.add(p);
             }
             catch(NullPointerException e){
                 // il post è stato eliminato
             }
         }
 
-        feed.sort( (Post p1, Post p2) -> p1.getTimestamp().compareTo(p2.getTimestamp()) );
+        feed.sort( (Post p1, Post p2) -> {
+        try{   
+            return p1.getTimestamp().compareTo(p2.getTimestamp());
+        }catch(NullPointerException e){
+            return 0;
+        }} );
 
         return feed;
 
-
-        /*
-        ArrayList<String> following = usersMap.get(reqFrom).getFollowing(); // following dell'utente
-        ArrayList<Post> feed = new ArrayList<Post>();
-
-        // lineare in numeroFollowing + numeroPostFollowing
-        for( String userId : following){ // per ogni utente che segue
-            
-            ArrayList<String> toAdd = usersMap.get(userId).getAllPost(); // prendo l'id di tutti i post che ha sul suo blog
-
-            for (String postId : toAdd){    // aggiungo ogni post al feed
-
-                try{
-                feed.add(postMap.get(postId));
-                }
-                catch(NullPointerException e){
-                    // il post è stato eliminato
-                }
-            }
-        }
-
-        feed.sort( (Post p1, Post p2) -> p1.getTimestamp().compareTo(p2.getTimestamp()) );
-
-        return feed;
-
-        */
     }
 
     // rewin di un post, cioè aggiungilo al proprio blog
@@ -521,6 +501,32 @@ public class Database {
 		for(Post p : posts){
             postMap.put(p.getID(), p);
         }
+    }
+
+    Boolean existsUser(String username)throws NullPointerException{
+
+        if(username == null) throw new NullPointerException();
+
+        return usersMap.containsKey(username);
+
+    }
+
+    String getPassword(String username) throws NullPointerException{
+
+        if(username == null) throw new NullPointerException();
+
+        return usersMap.get(username).getPassword();
+    }
+
+
+    ArrayList<String> getTags(String username) throws NullPointerException, UserNotFoundException{
+
+        if(username == null) throw new NullPointerException();
+
+        if(!usersMap.containsKey(username)) throw new UserNotFoundException();
+
+        return usersMap.get(username).getTags();
+
     }
     
     // debug del database

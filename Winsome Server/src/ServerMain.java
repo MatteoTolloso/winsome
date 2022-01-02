@@ -27,19 +27,21 @@ public class ServerMain{
 
         System.out.println("Server avviato");
 
-        //test_followUser();
-        //test_rewinPost();
+        test_createPost();
+        test_followUser();
 
+        /*
         try {
-            //db.jsonBackup(".");
+            db.jsonBackup(".");
             db.jsonRestore(".");
         } catch (InvalidPathException | NullPointerException | IOException e) {
             e.printStackTrace();
         }
-
-
+        */
 
         //startRMIRegister();
+
+        startSterver();
 
         db.print();
         
@@ -65,16 +67,17 @@ public class ServerMain{
     }
 
     public static void startSterver(){
-/*
-        ExecutorService pool = new ThreadPoolExecutor(8, 16, 1, TimeUnit.SECONDS,  new LinkedBlockingQueue<Runnable>());
+
+        ExecutorService pool = new ThreadPoolExecutor(8, 64, 3, TimeUnit.SECONDS,  new LinkedBlockingQueue<Runnable>());
         
         try {
             ServerSocket server = new ServerSocket();
-            server.bind(new InetSocketAddress("127.0.0.1", 8888));
+            server.bind(new InetSocketAddress("127.0.0.1", 9999));
 		
 			while (true) {
 				Socket client = server.accept();
-				pool.execute(new ClientTCPHandler(client));
+                System.out.println("nuova connessione");
+				pool.execute(new ClientHandler(client, db));
 			}			
 		}
 		catch(Exception e) {
@@ -93,8 +96,8 @@ public class ServerMain{
             e.printStackTrace();
         }
 		
-	}*/
-    }
+	}
+    
 
     public static void test_listUsers(){
 
@@ -275,6 +278,18 @@ public class ServerMain{
             db.createPost("matteo", "secondo post", "ciaoo");
         } catch (NullPointerException | UserNotFoundException e) {
             e.printStackTrace();
+        }
+
+        try {
+            db.register("pippo", "qwerty", new ArrayList<String>(Arrays.asList("calcio", "storia", "fisica")));
+        } catch (NullPointerException | UserAlrExiException | InvalidUsernameException e1) {
+            e1.printStackTrace();
+        }
+
+        try {
+            db.register("pluto", "qwerty", new ArrayList<String>(Arrays.asList("pizza", "storia", "pasta")));
+        } catch (NullPointerException | UserAlrExiException | InvalidUsernameException e1) {
+            e1.printStackTrace();
         }
 
     }

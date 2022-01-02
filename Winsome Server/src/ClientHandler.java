@@ -42,10 +42,11 @@ public class ClientHandler implements Runnable {
                 }
                 if(requestMessageLine.length() <= 0) {
                     System.out.println("messaggio vuoto");
+                    noValidHandler(outToClient);
                     continue;
                 }
 
-                System.out.println(requestMessageLine + requestMessageLine.length());
+                System.out.println("Richesta ricevuta: " + requestMessageLine);
 
                 StringTokenizer tokenizer = new StringTokenizer(requestMessageLine);
                 requestType = tokenizer.nextToken();
@@ -54,8 +55,6 @@ public class ClientHandler implements Runnable {
                     noLoginHandler(outToClient);
                     continue;
                 }
-
-                System.out.println("requestType: " + requestType);
 
                 switch(requestType){
                     case "login":{
@@ -66,7 +65,38 @@ public class ClientHandler implements Runnable {
                         listusersHandler(outToClient);
                         break;
                     }
-
+                    case "listfollowing":{
+                        listfollowingHandler(outToClient);
+                        break;
+                    }
+                    case "follow":{
+                        followHandler(tokenizer, outToClient);
+                        break;
+                    }
+                    case "unfollow":{
+                        unfollowHandler(tokenizer, outToClient);
+                        break;
+                    }
+                    case "blog":{
+                        viewblogHandler(outToClient);
+                        break;
+                    }
+                    case "post":{
+                        postHaldler(requestMessageLine, outToClient);
+                        break;
+                    }
+                    case "showfeed":{
+                        showfeedHandler(outToClient);
+                        break;
+                    } 
+                    case "showpost":{
+                        showpostHandler(tokenizer, outToClient);
+                        break;
+                    }
+                    case "delete":{
+                        deleteHandler(tokenizer, outToClient);
+                        break;
+                    }
 
 
                     default:{
@@ -76,8 +106,6 @@ public class ClientHandler implements Runnable {
 
                 }
             
-
-
 
             }while(!requestType.equals("logout"));
 
@@ -96,6 +124,289 @@ public class ClientHandler implements Runnable {
 
     }
 
+    void deleteHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
+        
+        StringBuilder response = new StringBuilder();
+
+        if (tokenizer.countTokens() < 1){
+            response.append("Uso: <idpost>").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+        String postID = tokenizer.nextToken();
+
+        try {
+
+            Post p = db.showPost(postID);
+            if(! p.getAuthor().equals(username)){
+                response.append("Non puoi eliminare questo post perche' non sei l'autore").append(NEW);
+                response.insert(0, Integer.toString(response.length()) + NEW );
+                outToClient.writeBytes(response.toString());
+                return;
+            }
+
+            db.deletePost(postID);
+
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+            throw new IOException();
+        } catch (PostNotFoundException e) {
+            response.append("Il post richiesto non esiste").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+        
+        if(response.toString().length() == 0) response.append("OK").append(NEW);
+        response.insert(0, Integer.toString(response.length()) + NEW );
+        outToClient.writeBytes(response.toString());
+
+
+    }
+
+    void showpostHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
+
+        StringBuilder response = new StringBuilder();
+
+        if (tokenizer.countTokens() < 1){
+            response.append("Uso: <idpost>").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+
+        String postID = tokenizer.nextToken();
+
+        Post p;
+
+        try {
+            p = db.showPost(postID);
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+            throw new IOException();
+        } catch (PostNotFoundException e) {
+            response.append("Il post richiesto non esiste").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+
+        response.append("--------").append(NEW);
+        response.append("ID: ").append(p.getID()).append(NEW);
+        response.append("Autore: ").append(p.getAuthor()).append(NEW);
+        response.append("Titolo: ").append(p.getTitle()).append(NEW);
+        response.append("Contenuto: ").append(p.getBody()).append(NEW);
+        response.append("--------").append(NEW);
+        response.insert(0, Integer.toString(response.length()) + NEW );
+        outToClient.writeBytes(response.toString());
+
+    }
+
+    void showfeedHandler(DataOutputStream outToClient)throws IOException{
+
+        StringBuilder response = new StringBuilder();
+
+        ArrayList<Post> posts;
+
+        try {
+            posts = db.showFeed(username);
+        } catch (NullPointerException | UserNotFoundException e) {
+            e.printStackTrace();
+            throw new IOException();
+        }
+
+        for(Post p : posts){
+            response.append("--------").append(NEW);
+            response.append("ID: ").append(p.getID()).append(NEW);
+            response.append("Autore: ").append(p.getAuthor()).append(NEW);
+            response.append("Titolo: ").append(p.getTitle()).append(NEW);
+            response.append("--------").append(NEW);
+        }
+        
+        if(response.toString().length() == 0) response.append("Nessun post nel feed").append(NEW);
+        response.insert(0, Integer.toString(response.length()) + NEW );
+        outToClient.writeBytes(response.toString());
+        return;
+
+    }
+
+    void postHaldler(String messageLine, DataOutputStream outToClient) throws IOException{  // da testare
+
+        StringBuilder response = new StringBuilder();
+
+        StringTokenizer tokenizer = new StringTokenizer(messageLine,"\"" );
+
+        System.out.println( tokenizer.nextToken() );// dovrebbe essere la richiesta "post" 
+
+        if (tokenizer.countTokens() < 3){
+            response.append("Uso: post <titolo> <contenuto>").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+
+        String title = tokenizer.nextToken();
+        tokenizer.nextToken();// dovrebbe essere la stringa con lo spazio
+        String content = tokenizer.nextToken();
+
+        if(title.length() > 20){
+            response.append("Il titolo non può superare 20 caratteri").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+        if(content.length() > 500){
+            response.append("Il contenuto non può superare 500 caratteri").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+
+        try {
+            db.createPost(username, title, content);
+        } catch (NullPointerException | UserNotFoundException e) {
+            e.printStackTrace();
+            throw new IOException();
+        }
+
+        response.append("OK").append(NEW);
+        response.insert(0, Integer.toString(response.length()) + NEW );
+        outToClient.writeBytes(response.toString());
+        return;
+
+    }
+
+    void viewblogHandler(DataOutputStream outToClient) throws IOException{
+
+        StringBuilder response = new StringBuilder();
+
+        ArrayList<Post> posts;
+        
+        try {
+            posts = db.viewBlog(username);
+        } catch (NullPointerException | UserNotFoundException e) {
+            e.printStackTrace();
+            throw new IOException();
+        }
+
+        for(Post p: posts){
+            response.append("--------").append(NEW);
+            response.append("ID: ").append(p.getID()).append(NEW);
+            response.append("Autore: ").append(p.getAuthor()).append(NEW);
+            response.append("Titolo: ").append(p.getTitle()).append(NEW);
+            response.append("--------").append(NEW);
+        }
+
+        if(response.toString().length() == 0) response.append("Nessun post nel blog").append(NEW);
+        response.insert(0, Integer.toString(response.length()) + NEW );
+        outToClient.writeBytes(response.toString());
+        return;
+
+    }
+
+    void unfollowHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
+        StringBuilder response = new StringBuilder();
+
+        if(tokenizer.countTokens() < 1){    // argomenti errati
+            response.append("Uso: unfollow <username>").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+
+        String toUnFollow = tokenizer.nextToken();
+
+        if(!db.existsUser(toUnFollow)){
+            response.append("Utente inesistente").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+
+        if(username.equals(toUnFollow)){
+            response.append("Non puoi smettere di seguire te stesso").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+
+        try {
+            db.unfollowUser(username, toUnFollow);
+        } catch (NullPointerException | UserNotFoundException  e) {
+            e.printStackTrace();
+            throw new IOException();
+        }
+
+        response.append("OK").append(NEW);
+        response.insert(0, Integer.toString(response.length()) + NEW );
+        outToClient.writeBytes(response.toString());
+        return;
+    }
+
+    void followHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
+
+        StringBuilder response = new StringBuilder();
+
+        if(tokenizer.countTokens() < 1){    // argomenti errati
+            response.append("Uso: follow <username>").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+
+        String toFollow = tokenizer.nextToken();
+
+        if(!db.existsUser(toFollow)){
+            response.append("Utente inesistente").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+
+        if(username.equals(toFollow)){
+            response.append("Non puoi seguire te stesso").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+
+        try {
+            db.followUser(username, toFollow);
+        } catch (NullPointerException | UserNotFoundException | InvalidUsernameException e) {
+            e.printStackTrace();
+            throw new IOException();
+        }
+
+        response.append("OK").append(NEW);
+        response.insert(0, Integer.toString(response.length()) + NEW );
+        outToClient.writeBytes(response.toString());
+        return;
+
+    }
+
+    void listfollowingHandler(DataOutputStream outToClient) throws IOException{
+        
+        StringBuilder response = new StringBuilder();
+        ArrayList<String> users;
+        
+        try {
+            users = db.listFollowing(username);
+        } catch (NullPointerException | UserNotFoundException e) {
+            e.printStackTrace();
+            throw new IOException();
+        }
+
+        for(String u : users){
+            response.append(u).append(NEW);
+        }
+
+        if(response.toString().length() == 0) response.append("Nessun utente seguito").append(NEW);
+        response.insert(0, Integer.toString(response.length()) + NEW ); 
+        outToClient.writeBytes(response.toString());
+
+    }
+
     void listusersHandler(DataOutputStream outToClient)throws IOException {
 
         StringBuilder response = new StringBuilder();
@@ -111,16 +422,17 @@ public class ClientHandler implements Runnable {
                     //System.out.println(t + " ");
                 
                 }
-                response.append('\n');
+                response.append(NEW);
             }
         } 
         catch (UserNotFoundException | Exception e) {   // dovrebbe essere impossibile perchè l'utente è loggato
+            e.printStackTrace();
             throw new IOException();
         }
 
         if(response.toString().length() == 0) response.append("Nessun utente affine").append(NEW);
 
-        response.insert(0, Integer.toString(response.length()) + NEW ); // da aggiornare tutto il protocollo in modo che invii come prima line la size del messaggio
+        response.insert(0, Integer.toString(response.length()) + NEW ); 
 
         outToClient.writeBytes(response.toString());
 
@@ -133,6 +445,7 @@ public class ClientHandler implements Runnable {
 
         StringBuilder response = new StringBuilder();
         response.append("Devi prima effettuare il login").append(NEW);
+        response.insert(0, Integer.toString(response.length()) + NEW );
         outToClient.writeBytes(response.toString());
         
     }
@@ -141,6 +454,7 @@ public class ClientHandler implements Runnable {
 
         StringBuilder response = new StringBuilder();
         response.append("Comando non disponibile").append(NEW);
+        response.insert(0, Integer.toString(response.length()) + NEW );
         outToClient.writeBytes(response.toString());
         
     }
@@ -151,6 +465,7 @@ public class ClientHandler implements Runnable {
 
         if(tokenizer.countTokens() < 2){    // argomenti errati
             response.append("Uso: login <username> <password>").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
             outToClient.writeBytes(response.toString());
             return;
         }
@@ -160,12 +475,14 @@ public class ClientHandler implements Runnable {
 
         if(!db.existsUser(username)){   // utente non esiste
             response.append("Utente non registrato").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
             outToClient.writeBytes(response.toString());
             return;
         }
 
         if(!db.getPassword(username).equals(password)){ // password errata
             response.append("Password errata").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
             outToClient.writeBytes(response.toString());
             return;
         }
@@ -173,6 +490,7 @@ public class ClientHandler implements Runnable {
         this.username = username;   // questo thread si sta occupando di questo utente
 
         response.append("OK").append(NEW);
+        response.insert(0, Integer.toString(response.length()) + NEW );
         outToClient.writeBytes(response.toString());
         return;
 
