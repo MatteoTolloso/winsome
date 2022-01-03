@@ -82,7 +82,7 @@ public class ServerMain{
 			while (true) {
 				Socket client = server.accept();
                 System.out.println("nuova connessione");
-				pool.execute(new ClientHandler(client, db));
+				pool.execute(new ClientHandler(client, db, callbackMap));
 			}			
 		}
 		catch(Exception e) {

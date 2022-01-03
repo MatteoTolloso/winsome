@@ -3,8 +3,10 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketImpl;
 import java.net.SocketTimeoutException;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ClientHandler implements Runnable {
     
@@ -14,11 +16,13 @@ public class ClientHandler implements Runnable {
     private String username = null;
     private int timeout = 0;    // da leggere dal file di configurazione
     private Database db;
+    private ConcurrentHashMap<String, FollowerServiceClient> callbackMap;
 
 
-    public ClientHandler(Socket client, Database db){
+    public ClientHandler(Socket client, Database db, ConcurrentHashMap<String, FollowerServiceClient> callbackMap){
         this.client = client;
         this.db = db;
+        this.callbackMap = callbackMap;
     }
 
 
@@ -511,6 +515,19 @@ public class ClientHandler implements Runnable {
         response.append("OK").append(NEW);
         response.insert(0, Integer.toString(response.length()) + NEW );
         outToClient.writeBytes(response.toString());
+
+        // notifica l'utente che viene smesso di seguire
+
+        try{
+            callbackMap.get(toUnFollow).removeFollower(username);
+        }
+        catch(RemoteException e){
+            e.printStackTrace();
+        }catch(NullPointerException e){
+
+        }
+        
+
         return;
     }
 
@@ -554,6 +571,18 @@ public class ClientHandler implements Runnable {
 
 
         // bisogna notificare toFollow che ha un nuovo follower
+
+    
+        try{
+            callbackMap.get(toFollow).addFollower(username);
+        }
+        catch(RemoteException e){
+            e.printStackTrace();
+        }
+        catch(NullPointerException e){
+            
+        }
+    
 
         return;
 
