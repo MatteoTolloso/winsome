@@ -118,6 +118,16 @@ public class Database {
         return usersMap.get(reqFrom).getFollowing(); // la clonazione viene fatta nel metodo della classe Utente
 
     }
+    // ritorna una lista contente gli utenti che seguono <<reqFrom>>
+    public ArrayList<String> listFollowers(String reqFrom) throws NullPointerException, UserNotFoundException{
+
+        if (reqFrom == null) throw new NullPointerException();
+
+        if (!usersMap.containsKey(reqFrom)) throw new UserNotFoundException();
+
+        return usersMap.get(reqFrom).getFollowers(); // la clonazione viene fatta nel metodo della classe Utente
+
+    }
    
     // registra che l'utente <<reqFrom>> inizia a seguire l'utente <<toFollow>>
     public void followUser(String reqFrom, String toFollow) throws NullPointerException, UserNotFoundException, InvalidUsernameException{

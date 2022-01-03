@@ -11,6 +11,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -20,8 +21,8 @@ public class ServerMain{
     
     private static Database db = new Database(); 
     private static int  registryPort = 8888;
-    private static RegistrationServiceImp obj;
-    private static RegistrationService stub;
+    
+    private static ConcurrentHashMap<String, FollowerServiceClient> callbackMap = new ConcurrentHashMap<String, FollowerServiceClient>();
     
     public static void main(String args[]){
 
@@ -38,7 +39,7 @@ public class ServerMain{
         }
         */
 
-        //startRMIRegister();
+        startRMI();
 
         startSterver();
 
@@ -46,16 +47,21 @@ public class ServerMain{
         
     }
 
-    public static void startRMIRegister(){
+    public static void startRMI(){
+
+        
 
         try {
-            obj = new RegistrationServiceImp(db);    // istanza dell'oggetto che permette la registrazione al social
-            
-            stub = (RegistrationService)UnicastRemoteObject.exportObject(obj, 0);  // esporto l'oggetto
+            RegistrationServiceImp registrationServiceObj = new RegistrationServiceImp(db);    // istanza dell'oggetto che permette la registrazione al social
+            RegistrationService registrationServiceStub = (RegistrationService)UnicastRemoteObject.exportObject(registrationServiceObj, 0);  // esporto l'oggetto
+
+            FollowersServiceServerImp followerServiceServerObj = new FollowersServiceServerImp(db, callbackMap);
+            FollowerServiceServer followerServiceServerStub = (FollowerServiceServer)UnicastRemoteObject.exportObject(followerServiceServerObj, 0);
 
             Registry registry = LocateRegistry.createRegistry(registryPort);    // creo un registro
 
-            registry.bind("register", stub);  // pubblico lo stub nel registro
+            registry.bind("register", registrationServiceStub);  // pubblico lo stub nel registro
+            registry.bind("followers", followerServiceServerStub);
 
         } catch (RemoteException | AlreadyBoundException e) {
             e.printStackTrace();
@@ -135,7 +141,7 @@ public class ServerMain{
             e.printStackTrace();
         }
 
-        
+
 
         
 

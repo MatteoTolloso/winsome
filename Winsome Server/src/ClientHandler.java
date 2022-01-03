@@ -51,7 +51,7 @@ public class ClientHandler implements Runnable {
                 StringTokenizer tokenizer = new StringTokenizer(requestMessageLine);
                 requestType = tokenizer.nextToken();
 
-                if((username == null) && (!requestType.equals("login"))) {
+                if((username == null) && (!requestType.equals("login") ) && (!requestType.equals("logout"))) {
                     noLoginHandler(outToClient);
                     continue;
                 }
@@ -551,6 +551,10 @@ public class ClientHandler implements Runnable {
         response.append("OK").append(NEW);
         response.insert(0, Integer.toString(response.length()) + NEW );
         outToClient.writeBytes(response.toString());
+
+
+        // bisogna notificare toFollow che ha un nuovo follower
+
         return;
 
     }
@@ -644,7 +648,7 @@ public class ClientHandler implements Runnable {
         String password = tokenizer.nextToken();
 
         if(!db.existsUser(username)){   // utente non esiste
-            response.append("Utente non registrato").append(NEW);
+            response.append("Utente non registrato, effettua la registrazione").append(NEW);
             response.insert(0, Integer.toString(response.length()) + NEW );
             outToClient.writeBytes(response.toString());
             return;
