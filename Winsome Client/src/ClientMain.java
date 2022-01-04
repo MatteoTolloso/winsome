@@ -1,6 +1,10 @@
 
 import java.io.*;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -9,8 +13,11 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
+import javax.management.loading.MLet;
 
-public class ClientMain {
+
+public class ClientMain{
+
 
     private static int registryPort = 8888;
     private static String hostname = "127.0.0.1";
@@ -50,13 +57,13 @@ public class ClientMain {
 
                 reqType = token.nextToken();
 
-                if(reqType.equals("listfollowers")){
+                if(reqType.equals("listfollowers")){ // gestita localmente
                     for(String s : followers){
                         System.out.println("> " + s);
                     }
                     continue;
                 }
-                if(reqType.equals("register")){
+                if(reqType.equals("register")){ // gestita tramite RMI
                     registerHandler(token);
                     continue;
                 }
@@ -66,30 +73,35 @@ public class ClientMain {
                 
                 outToClient.writeBytes(request.toString()); // da implementare login passivo
 
-                String response = inFromClient.readLine();  // prima  riga della risposta che contiene il numero di byte
+                StringBuilder response = new StringBuilder();
+                response.append(inFromClient.readLine());  // prima  riga della risposta che contiene il numero di byte
                 int remaining;  
                 try{
-                    remaining = Integer.parseInt(response); // byte rimaneneti
+                    remaining = Integer.parseInt(response.toString()); // byte rimaneneti
                 }catch(Exception e){
                     throw new IOException();
                 }
-                
-                //System.out.println("> " + response);
-                
+                                
                 do{     
                     
-                    response = inFromClient.readLine();
+                    response.append(inFromClient.readLine());
                     remaining = remaining - (response.length() + 2); // sottraggo anche il carattere newline
                     System.out.println("> "  +response);
 
                 } while(remaining > 0); //leggo la risposta finche ho ancora byte da leggere
     
-                if(reqType.equals("login") && response.equals("OK")){   // se c'è stata una richiesta di login andata a buon fine
+                if(reqType.equals("login") && response.toString().contains("OK")){   // se c'è stata una richiesta di login andata a buon fine
                     StringTokenizer newToken = new StringTokenizer(line);// parso username e password
                     newToken.nextToken();
                     username = newToken.nextToken();
                     password = newToken.nextToken();
                     registerForCallback();  // mi registro per la callback
+                }
+                if(reqType.equals("multicastaddress") && response.toString().contains("OK")){
+                    StringTokenizer newToken = new StringTokenizer(response.toString());
+                    String multicastAddr = newToken.nextToken();
+                    int multicastPort = Integer.parseInt(newToken.nextToken());
+                    (new MulticastReciver(multicastAddr, multicastPort)).start();
                 }
                 
             }while (! (reqType.equals("logout")));
@@ -150,6 +162,7 @@ public class ClientMain {
     }
 
     private static void registerHandler(StringTokenizer token){
+
         
         if(token.countTokens() < 3){
             System.out.println("> Uso: register <username> <password> <tags>");
@@ -192,4 +205,5 @@ public class ClientMain {
         System.out.println("> OK");
         
     }
+
 }
