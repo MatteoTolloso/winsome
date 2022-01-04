@@ -1,9 +1,9 @@
 
-import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.file.InvalidPathException;
+import java.net.UnknownHostException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -20,7 +20,18 @@ import java.util.concurrent.TimeUnit;
 public class ServerMain{
     
     private static Database db = new Database(); 
+    
     private static int  registryPort = 8888;
+
+    private static long periodo = 10000;
+    
+    private static String multicastAddr = "239.255.1.3";
+    private static int multicastPort = 9998;
+    
+    
+    private static String serverAddr = "127.0.0.1";
+    private static int serverPort = 9999;
+    
     
     private static ConcurrentHashMap<String, FollowerServiceClient> callbackMap = new ConcurrentHashMap<String, FollowerServiceClient>();
     
@@ -28,28 +39,43 @@ public class ServerMain{
 
         System.out.println("Server avviato");
 
-        test();
+        try{
 
-        /*
-        try {
-            db.jsonBackup(".");
-            db.jsonRestore(".");
-        } catch (InvalidPathException | NullPointerException | IOException e) {
-            e.printStackTrace();
+            //db.jsonRestore(".");
+
+            startRMI();
+
+            startMulticast();
+
+            startDaemon();
+
+            startSterver();
         }
-        */
-
-        startRMI();
-
-        startSterver();
-
+        catch(Exception e){
+            e.printStackTrace();
+            System.out.println("impossibile avviare il server");
+            System.exit(0);
+        }
         db.print();
         
     }
 
-    public static void startRMI(){
+    private static void startDaemon(){
+        (new Daemon(db, multicastAddr, multicastPort, periodo)).start();
+    }
 
+    private static void startMulticast() throws UnknownHostException, IllegalArgumentException{
+
+        InetAddress multicastGroup = InetAddress.getByName(multicastAddr);
+       
+        if (!multicastGroup.isMulticastAddress()){
+            throw new IllegalArgumentException();
+        }
         
+
+    }
+
+    private static void startRMI(){
 
         try {
             RegistrationServiceImp registrationServiceObj = new RegistrationServiceImp(db);    // istanza dell'oggetto che permette la registrazione al social
@@ -71,18 +97,18 @@ public class ServerMain{
 
     }
 
-    public static void startSterver(){
+    private static void startSterver(){
 
         ExecutorService pool = new ThreadPoolExecutor(8, 64, 3, TimeUnit.SECONDS,  new LinkedBlockingQueue<Runnable>());
         
         try {
             ServerSocket server = new ServerSocket();
-            server.bind(new InetSocketAddress("127.0.0.1", 9999));
+            server.bind(new InetSocketAddress(serverAddr, serverPort));
 		
 			while (true) {
 				Socket client = server.accept();
                 System.out.println("nuova connessione");
-				pool.execute(new ClientHandler(client, db, callbackMap));
+				pool.execute(new ClientHandler(client, db, callbackMap, multicastAddr, multicastPort));
 			}			
 		}
 		catch(Exception e) {

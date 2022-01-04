@@ -1,10 +1,8 @@
 import java.io.*;
 import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.SocketImpl;
-import java.net.SocketTimeoutException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -17,12 +15,16 @@ public class ClientHandler implements Runnable {
     private int timeout = 0;    // da leggere dal file di configurazione
     private Database db;
     private ConcurrentHashMap<String, FollowerServiceClient> callbackMap;
+    private String multicastAddr;
+    private int multicastPort;
 
 
-    public ClientHandler(Socket client, Database db, ConcurrentHashMap<String, FollowerServiceClient> callbackMap){
+    public ClientHandler(Socket client, Database db, ConcurrentHashMap<String, FollowerServiceClient> callbackMap, String multicastAddr, int multicastPort){
         this.client = client;
         this.db = db;
         this.callbackMap = callbackMap;
+        this.multicastAddr = multicastAddr;
+        this.multicastPort =  multicastPort;
     }
 
 
@@ -121,6 +123,10 @@ public class ClientHandler implements Runnable {
                         walletbtcHandler(outToClient);
                         break;
                     }
+                    case "multicastabbress":{
+                        multicastaddressHandler(outToClient);
+                        break;
+                    }
 
 
                     default:{
@@ -148,7 +154,16 @@ public class ClientHandler implements Runnable {
 
     }
 
-    void walletbtcHandler(DataOutputStream outToClient){
+    private void multicastaddressHandler(DataOutputStream outToClient)throws IOException{
+        StringBuilder response = new StringBuilder();
+
+        response.append(multicastAddr).append(" ").append(Integer.toString(multicastPort)).append(NEW);
+
+        response.insert(0, Integer.toString(response.length()) + NEW );
+        outToClient.writeBytes(response.toString());
+    }
+
+    private void walletbtcHandler(DataOutputStream outToClient){
         //TODO
     }
 
@@ -156,7 +171,10 @@ public class ClientHandler implements Runnable {
         StringBuilder response = new StringBuilder();
 
         try {
-            response.append(Double.toString( db.getWallet(username) ) ).append(NEW);
+            response.append("Portafoglio: ").append(Double.toString( db.getWallet(username) ) ).append(NEW);
+            for(Transaction t : db.getTransactions(username)){
+                response.append("   Incremento: ").append(Double.toString( t.getIncremento()) ).append(", Timestamp: ").append(t.getTimestamp().get(Calendar.DATE)).append(NEW);
+            }
         } catch (NullPointerException | UserNotFoundException e) { // impossibile
             throw new IOException();
         }

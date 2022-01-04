@@ -116,6 +116,13 @@ public class Utente {
         return this.wallet;
     }
 
+    public synchronized void addTransaction(double inc){
+        Transaction t = new Transaction(inc);
+        this.wallet += inc;
+        transactions.add(t);
+        return;
+    }
+
     public synchronized ArrayList<Transaction> getTransactions(){
         return new ArrayList<Transaction>(this.transactions);
     }

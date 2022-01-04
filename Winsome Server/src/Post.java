@@ -25,7 +25,7 @@ public class Post {
     }
 
     public Post(){
-        
+
     }
 
     public Post(Post p){
@@ -110,7 +110,7 @@ public class Post {
         commentsIndex = comments.size();
         return newComments;
     }
-    public synchronized int addAndGetIteration(){
+    public synchronized int incrAndGetIteration(){
         return ++iterations;
     }
 

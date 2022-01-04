@@ -538,6 +538,18 @@ public class Database {
         return usersMap.get(username).getTags();
 
     }
+
+    void addToWallet(String username, double incremento) throws NullPointerException, UserNotFoundException{
+        if(username == null) throw new NullPointerException();
+        if(!usersMap.containsKey(username)) throw new UserNotFoundException();
+
+        usersMap.get(username).addTransaction(incremento);
+    }
+
+    ArrayList<Post> getAllPosts(){
+
+        return new ArrayList<Post>(this.postMap.values());
+    }
     
     // debug del database
     public void print(){    // stampa il database per debug
