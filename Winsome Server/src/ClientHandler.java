@@ -1,5 +1,7 @@
 import java.io.*;
 import java.net.Socket;
+import java.net.URL;
+import java.net.URLConnection;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -123,8 +125,12 @@ public class ClientHandler implements Runnable {
                         walletbtcHandler(outToClient);
                         break;
                     }
-                    case "multicastabbress":{
-                        multicastaddressHandler(outToClient);
+                    case "multicast":{
+                        multicastHandler(outToClient);
+                        break;
+                    }
+                    case "logout":{
+                        // TODO
                         break;
                     }
 
@@ -154,7 +160,7 @@ public class ClientHandler implements Runnable {
 
     }
 
-    private void multicastaddressHandler(DataOutputStream outToClient)throws IOException{
+    private void multicastHandler(DataOutputStream outToClient)throws IOException{
         StringBuilder response = new StringBuilder();
 
         response.append(multicastAddr).append(" ").append(Integer.toString(multicastPort)).append(NEW);
@@ -163,8 +169,51 @@ public class ClientHandler implements Runnable {
         outToClient.writeBytes(response.toString());
     }
 
-    private void walletbtcHandler(DataOutputStream outToClient){
-        //TODO
+    private void walletbtcHandler(DataOutputStream outToClient) throws IOException{
+
+        double tassoCambio;
+        StringBuilder response = new StringBuilder();
+
+        try {
+            URL url = new URL("https://www.random.org/decimal-fractions/?num=1&dec=10&col=1&format=plain&rnd=new");
+            URLConnection connection = url.openConnection();
+            connection.setConnectTimeout(5000);
+            BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+      
+            StringBuilder stringBuilder = new StringBuilder();
+      
+            String line;
+            while ((line = in.readLine()) != null) {
+              stringBuilder.append(line);
+            }
+
+            tassoCambio = Double.parseDouble( stringBuilder.toString());
+
+            in.close();
+
+        }
+        catch(Exception e){
+            response.append("Non riesco a reperire il tasso di cambio").append(NEW);
+            response.insert(0, Integer.toString(response.length()) + NEW );
+            outToClient.writeBytes(response.toString());
+            return;
+        }
+
+        double wallInBtc;
+        
+        try {
+            wallInBtc = db.getWallet(username) * tassoCambio;
+        } catch (NullPointerException | UserNotFoundException e) {  // impossibile
+            e.printStackTrace();
+            throw new IOException();
+        }
+
+        response.append("Portafoglio in Bitcoin: ").append(Double.toString(wallInBtc)).append(NEW);
+        response.insert(0, Integer.toString(response.length()) + NEW );
+        outToClient.writeBytes(response.toString());
+        return;
+
+
     }
 
     void walletHandler(DataOutputStream outToClient) throws IOException{
@@ -173,7 +222,15 @@ public class ClientHandler implements Runnable {
         try {
             response.append("Portafoglio: ").append(Double.toString( db.getWallet(username) ) ).append(NEW);
             for(Transaction t : db.getTransactions(username)){
-                response.append("   Incremento: ").append(Double.toString( t.getIncremento()) ).append(", Timestamp: ").append(t.getTimestamp().get(Calendar.DATE)).append(NEW);
+                response.append("   Incremento: ").append(Double.toString( t.getIncremento()) )
+                .append(", Timestamp: ")
+                .append(t.getTimestamp().get(Calendar.DATE)).append("/")
+                .append(t.getTimestamp().get(Calendar.MONTH) +1 ).append("/")
+                .append(t.getTimestamp().get(Calendar.YEAR)).append(" ")
+                .append(t.getTimestamp().get(Calendar.HOUR_OF_DAY)).append(":")
+                .append(t.getTimestamp().get(Calendar.MINUTE)).append(":")
+                .append(t.getTimestamp().get(Calendar.SECOND))
+                .append(NEW);
             }
         } catch (NullPointerException | UserNotFoundException e) { // impossibile
             throw new IOException();
@@ -224,6 +281,7 @@ public class ClientHandler implements Runnable {
         return;
 
     }
+
     void ratepostHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
         StringBuilder response = new StringBuilder();
 

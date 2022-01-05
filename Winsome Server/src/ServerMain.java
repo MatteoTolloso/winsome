@@ -1,8 +1,12 @@
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
+import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.RemoteException;
@@ -39,6 +43,12 @@ public class ServerMain{
 
         System.out.println("Server avviato");
 
+        try {
+            test();
+        } catch (NullPointerException | UserAlrExiException | InvalidUsernameException | UserNotFoundException | PostNotFoundException | NotAllowedException e1) {
+            e1.printStackTrace();
+        }
+        
         try{
 
             //db.jsonRestore(".");
@@ -129,44 +139,13 @@ public class ServerMain{
 		
 	}
 
-    public static void test(){
+    public static void test() throws NullPointerException, UserAlrExiException, InvalidUsernameException, UserNotFoundException, PostNotFoundException, NotAllowedException{
 
-        try {
-            db.register("matteo", "q", new ArrayList<String>(Arrays.asList("musica", "storia", "nuoto")));
-        } catch (NullPointerException | UserAlrExiException | InvalidUsernameException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            db.register("pippo", "q", new ArrayList<String>(Arrays.asList("musica", "storia", "nuoto")));
-        } catch (NullPointerException | UserAlrExiException | InvalidUsernameException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            db.register("pluto", "q", new ArrayList<String>(Arrays.asList("musica", "storia", "nuoto")));
-        } catch (NullPointerException | UserAlrExiException | InvalidUsernameException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            db.followUser("matteo", "pippo");
-        } catch (NullPointerException | UserNotFoundException | InvalidUsernameException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            db.followUser("pippo", "pluto");
-        } catch (NullPointerException | UserNotFoundException | InvalidUsernameException e) {
-            e.printStackTrace();
-        }
-
-        try {
-            db.createPost("pluto", "primo opst", "ciaooo");
-        } catch (NullPointerException | UserNotFoundException e) {
-            e.printStackTrace();
-        }
-
+        db.register("matteo", "password", new ArrayList<String>(Arrays.asList("musica", "storia", "nuoto")));
+        db.register("pippo", "password", new ArrayList<String>(Arrays.asList("musica", "storia", "nuoto")));
+        db.createPost("matteo", "testpost", "ciao");
+        db.followUser("pippo", "matteo");
+        db.ratePost("pippo", "matteo#1", true);
 
 
         

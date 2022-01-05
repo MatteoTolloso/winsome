@@ -55,6 +55,8 @@ public class Daemon extends Thread {
 
         for(Post p : db.getAllPosts()){ // ogni post nel database
 
+            System.err.println("DEBUG " + "valuto il post "+ p.getID() );
+
             // prima parte del numeratore
             ArrayList<String> new_people_upvote = p.getNewUpvote();
             ArrayList<String> new_people_downvote = p.getDownVote();
@@ -63,7 +65,7 @@ public class Daemon extends Thread {
             b = b + 1 ; // aggiungo 1
             
             //seconda parte del numeratore
-            ArrayList<Comment> new_comments = p.getComments(); // tutti i commenti fatti dall'ultima iterazione
+            ArrayList<Comment> new_comments = p.getNewComments(); // tutti i commenti fatti dall'ultima iterazione
             ArrayList<String> new_people_commenting = removeDuplicateAndToString(new_comments); // ottieni un array di stringhe con i nomi delle persone che hanno commentato senza duplicati 
             double c = 0;
             for(String s : new_people_commenting){
@@ -75,11 +77,16 @@ public class Daemon extends Thread {
             double numeratore = Math.log(b) + Math.log(c);
             double guadagno = numeratore / p.incrAndGetIteration();
 
+
+            if(guadagno <= 0) continue; // il post non ha generato incassi
+
             // ricompensa l'autore del post
             double ricompensaAutore = guadagno*precetualeAutore;
             
             try {   
                 db.addToWallet(p.getAuthor(), ricompensaAutore);
+                System.err.println("DEBUG " + "aggiungo  "+ Double.toString(ricompensaAutore) + " al portafoglio di  " + p.getAuthor() );
+
             } catch (NullPointerException | UserNotFoundException e1) {
                 e1.printStackTrace();
             }
@@ -88,13 +95,15 @@ public class Daemon extends Thread {
             ArrayList<String> curatori = new ArrayList<String>(new_people_upvote);  // persone che hanno messo upvote
             for(String s : new_people_commenting) if(!curatori.contains(s)) curatori.add(s);   // piu' percone che hanno commentato (no duplicati)
 
-            if(curatori.size() == 0) return;// in questo caso non c'è nessun curatore
+            if(curatori.size() == 0) continue;// in questo caso non c'è nessun curatore
 
             double ricompesaCuratore = (guadagno*(1-precetualeAutore)) / curatori.size();
 
             for(String utente : curatori){ // ricompensa i curatori che hanno commentato
                 try {
                     db.addToWallet(utente, ricompesaCuratore);
+                    System.err.println("DEBUG " + "aggiungo  "+ Double.toString(ricompesaCuratore) + " al portafoglio di  " + utente );
+
                 } catch (NullPointerException | UserNotFoundException e) {
                     // impossibile che un utente che ha commentato o messo like non sia iscritto
                     e.printStackTrace();
