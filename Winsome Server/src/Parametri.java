@@ -26,6 +26,9 @@ public class Parametri {
     // timeout di attesa sulla socket TCP
     private  int timeout = 0;
 
+    //cartella dove eseguire backup e ripristino dello stato del server
+    String backupFolder = ".";
+
     public Parametri(){}
 
     public void parseParametri(String path) throws InvalidPathException, FileNotFoundException, IOException, NumberFormatException{
@@ -77,6 +80,11 @@ public class Parametri {
                 case "timeout":{
                     String tout = tokens.nextToken();
                     this.timeout = Integer.parseInt(tout);
+                    break;
+                }
+                case "backupFolder":{
+                    String bckfol = tokens.nextToken();
+                    this.backupFolder = bckfol;
                     break;
                 }
             }

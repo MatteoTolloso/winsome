@@ -1,0 +1,20 @@
+[ {
+  "id" : "matteo#1",
+  "author" : "matteo",
+  "title" : "ciaoo",
+  "body" : "hello world",
+  "upVote" : [ "pippo" ],
+  "upVoteIndex" : 1,
+  "downVote" : [ ],
+  "downVoteIndex" : 0,
+  "comments" : [ {
+    "username" : "pippo",
+    "body" : "bel post!"
+  } ],
+  "commentsIndex" : 1,
+  "timestamp" : 1641407293941,
+  "iterations" : 83,
+  "newUpvote" : [ ],
+  "newDownvote" : [ ],
+  "newComments" : [ ]
+} ]

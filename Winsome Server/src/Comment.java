@@ -8,6 +8,10 @@ public class Comment{
         this.body = body;
     }
 
+    public Comment(){
+        
+    }
+
     public void print(){
         System.out.println("        Username: "+ username);
         System.out.println("        Body: "+ body);

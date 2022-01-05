@@ -9,6 +9,10 @@ public class Transaction {
         this.incremento = incr;
     }
 
+    public Transaction(){
+        
+    }
+
     public double getIncremento(){
         return incremento;
     }

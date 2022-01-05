@@ -1,6 +1,8 @@
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.nio.file.InvalidPathException;
 import java.util.ArrayList;
 
 public class Daemon extends Thread {
@@ -29,21 +31,19 @@ public class Daemon extends Thread {
 
             inviaNotificaRicompense();
 
-            /*
             try {
                 db.jsonBackup(".");
             } catch (InvalidPathException | NullPointerException | IOException e1) {
                 e1.printStackTrace();
             }
-            */
-
+            
+            System.out.println("Periodo terminato: ricomense calcolate, notifiche inviate, backup effettuato");
+            
             try {
                 Thread.sleep(periodo);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-
-            System.out.println("periodo terminato");
 
         }
 
@@ -53,7 +53,7 @@ public class Daemon extends Thread {
 
         for(Post p : db.getAllPosts()){ // ogni post nel database
 
-            System.err.println("DEBUG " + "valuto il post "+ p.getID() );
+            //System.err.println("DEBUG " + "valuto il post "+ p.getID() );
 
             // prima parte del numeratore
             ArrayList<String> new_people_upvote = p.getNewUpvote();
@@ -83,7 +83,7 @@ public class Daemon extends Thread {
             
             try {   
                 db.addToWallet(p.getAuthor(), ricompensaAutore);
-                System.err.println("DEBUG " + "aggiungo  "+ Double.toString(ricompensaAutore) + " al portafoglio di  " + p.getAuthor() );
+                //System.err.println("DEBUG " + "aggiungo  "+ Double.toString(ricompensaAutore) + " al portafoglio di  " + p.getAuthor() );
 
             } catch (NullPointerException | UserNotFoundException e1) {
                 e1.printStackTrace();
@@ -100,7 +100,7 @@ public class Daemon extends Thread {
             for(String utente : curatori){ // ricompensa i curatori che hanno commentato
                 try {
                     db.addToWallet(utente, ricompesaCuratore);
-                    System.err.println("DEBUG " + "aggiungo  "+ Double.toString(ricompesaCuratore) + " al portafoglio di  " + utente );
+                    //System.err.println("DEBUG " + "aggiungo  "+ Double.toString(ricompesaCuratore) + " al portafoglio di  " + utente );
 
                 } catch (NullPointerException | UserNotFoundException e) {
                     // impossibile che un utente che ha commentato o messo like non sia iscritto

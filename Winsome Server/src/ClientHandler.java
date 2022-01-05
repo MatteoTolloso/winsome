@@ -177,6 +177,8 @@ public class ClientHandler implements Runnable {
         } catch (IOException e) {
             // non faccio niente perchè il client potrebbe aver già interrotto la connessione
         }
+
+        callbackMap.remove(username);
         
     }
 

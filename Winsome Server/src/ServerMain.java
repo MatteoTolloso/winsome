@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.nio.file.InvalidPathException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -24,20 +25,17 @@ public class ServerMain{
     private static Parametri  parametri = new Parametri();
     
     public static void main(String args[]){
-
-        System.out.println("Server avviato");
-
-        try {
-            test();
-        } catch (NullPointerException | UserAlrExiException | InvalidUsernameException | UserNotFoundException | PostNotFoundException | NotAllowedException e1) {
-            e1.printStackTrace();
-        }
         
+        System.err.println("Preparo l'avvio del server...");
         try{
-
-            //db.jsonRestore(".");
-
+            
             parametri.parseParametri("./config.txt");
+           
+            try{
+                db.jsonRestore(parametri.backupFolder);
+            }catch(InvalidPathException e){
+                System.err.println("Nessuno stato di partenza");
+            }
 
             startRMI();
 
@@ -52,7 +50,8 @@ public class ServerMain{
             System.out.println("impossibile avviare il server");
             System.exit(0);
         }
-        db.print();
+        
+        
         
     }
 
@@ -96,17 +95,18 @@ public class ServerMain{
     private static void startSterver(){
 
         ExecutorService pool = new ThreadPoolExecutor(8, 64, 3, TimeUnit.SECONDS,  new LinkedBlockingQueue<Runnable>());
-        
+        ServerSocket server;
         try {
-            ServerSocket server = new ServerSocket();
+            server = new ServerSocket();
             server.bind(new InetSocketAddress(parametri.getServerAddr(), parametri.getServerPort()));
-		
+            System.out.println("Server avviato");
 			while (true) {
 				Socket client = server.accept();
                 System.out.println("nuova connessione");
 				pool.execute(new ClientHandler(client, db, callbackMap, parametri.getMulticastAddr(),
                             parametri.getMulticastPort(), parametri.getTimeout()));
-			}			
+			}
+            
 		}
 		catch(Exception e) {
 			e.printStackTrace();
