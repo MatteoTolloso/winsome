@@ -21,12 +21,15 @@ public class ClientHandler implements Runnable {
     private int multicastPort;
 
 
-    public ClientHandler(Socket client, Database db, ConcurrentHashMap<String, FollowerServiceClient> callbackMap, String multicastAddr, int multicastPort){
+    public ClientHandler(Socket client, Database db, ConcurrentHashMap<String, 
+                        FollowerServiceClient> callbackMap, String multicastAddr, int multicastPort,
+                        int timeout){
         this.client = client;
         this.db = db;
         this.callbackMap = callbackMap;
         this.multicastAddr = multicastAddr;
         this.multicastPort =  multicastPort;
+        this.timeout = timeout;
     }
 
 
@@ -130,7 +133,7 @@ public class ClientHandler implements Runnable {
                         break;
                     }
                     case "logout":{
-                        // TODO
+                        logoutHandler(outToClient);
                         break;
                     }
 
@@ -145,7 +148,7 @@ public class ClientHandler implements Runnable {
 
             }while(!requestType.equals("logout"));
 
-            client.close();
+            
 
             System.out.println("connessione terminata");
 
@@ -156,8 +159,25 @@ public class ClientHandler implements Runnable {
 
             return;
         }
+        
+        try {
+            client.close();
+        } catch (IOException e) {}
 
+    }
 
+    private void logoutHandler(DataOutputStream outToClient){
+        StringBuilder response = new StringBuilder();
+
+        response.append("Arrivederci!").append(NEW);
+
+        response.insert(0, Integer.toString(response.length()) + NEW );
+        try {
+            outToClient.writeBytes(response.toString());
+        } catch (IOException e) {
+            // non faccio niente perchè il client potrebbe aver già interrotto la connessione
+        }
+        
     }
 
     private void multicastHandler(DataOutputStream outToClient)throws IOException{

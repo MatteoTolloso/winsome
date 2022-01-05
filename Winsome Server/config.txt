@@ -1,0 +1,12 @@
+
+registryPort = 8888;
+
+periodo = 10000;
+
+multicastAddr = "239.255.1.3";
+multicastPort = 9998;
+
+serverAddr = "127.0.0.1";
+serverPort = 9999;
+
+timeout = 0;

@@ -1,12 +1,8 @@
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.URL;
-import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.rmi.AlreadyBoundException;
 import java.rmi.RemoteException;
@@ -24,20 +20,8 @@ import java.util.concurrent.TimeUnit;
 public class ServerMain{
     
     private static Database db = new Database(); 
-    
-    private static int  registryPort = 8888;
-
-    private static long periodo = 10000;
-    
-    private static String multicastAddr = "239.255.1.3";
-    private static int multicastPort = 9998;
-    
-    
-    private static String serverAddr = "127.0.0.1";
-    private static int serverPort = 9999;
-    
-    
     private static ConcurrentHashMap<String, FollowerServiceClient> callbackMap = new ConcurrentHashMap<String, FollowerServiceClient>();
+    private static Parametri  parametri = new Parametri();
     
     public static void main(String args[]){
 
@@ -52,6 +36,8 @@ public class ServerMain{
         try{
 
             //db.jsonRestore(".");
+
+            parametri.parseParametri("./config.txt");
 
             startRMI();
 
@@ -71,12 +57,12 @@ public class ServerMain{
     }
 
     private static void startDaemon(){
-        (new Daemon(db, multicastAddr, multicastPort, periodo)).start();
+        (new Daemon(db, parametri.getMulticastAddr(), parametri.getMulticastPort(), parametri.getPeriodo())).start();
     }
 
     private static void startMulticast() throws UnknownHostException, IllegalArgumentException{
 
-        InetAddress multicastGroup = InetAddress.getByName(multicastAddr);
+        InetAddress multicastGroup = InetAddress.getByName(parametri.getMulticastAddr());
        
         if (!multicastGroup.isMulticastAddress()){
             throw new IllegalArgumentException();
@@ -94,7 +80,7 @@ public class ServerMain{
             FollowersServiceServerImp followerServiceServerObj = new FollowersServiceServerImp(db, callbackMap);
             FollowerServiceServer followerServiceServerStub = (FollowerServiceServer)UnicastRemoteObject.exportObject(followerServiceServerObj, 0);
 
-            Registry registry = LocateRegistry.createRegistry(registryPort);    // creo un registro
+            Registry registry = LocateRegistry.createRegistry(parametri.getRegistryPort());    // creo un registro
 
             registry.bind("register", registrationServiceStub);  // pubblico lo stub nel registro
             registry.bind("followers", followerServiceServerStub);
@@ -113,12 +99,13 @@ public class ServerMain{
         
         try {
             ServerSocket server = new ServerSocket();
-            server.bind(new InetSocketAddress(serverAddr, serverPort));
+            server.bind(new InetSocketAddress(parametri.getServerAddr(), parametri.getServerPort()));
 		
 			while (true) {
 				Socket client = server.accept();
                 System.out.println("nuova connessione");
-				pool.execute(new ClientHandler(client, db, callbackMap, multicastAddr, multicastPort));
+				pool.execute(new ClientHandler(client, db, callbackMap, parametri.getMulticastAddr(),
+                            parametri.getMulticastPort(), parametri.getTimeout()));
 			}			
 		}
 		catch(Exception e) {
