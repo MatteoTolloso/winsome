@@ -1,14 +1,17 @@
 
-registryPort = 8888;
+registryPort=8888
 
-periodo = 10000;
+# espresso in millisecondi
+periodo=60000
 
-multicastAddr = "239.255.1.3";
-multicastPort = 9998;
+multicastAddr=239.255.1.3
+multicastPort=9998
 
-serverAddr = "127.0.0.1";
-serverPort = 9999;
+serverAddr=127.0.0.1
+serverPort=9999
 
-timeout = 0;
+timeout=10000
 
-backupFolder = "."
+backupFolder=.
+
+percentualeAutore=0.7

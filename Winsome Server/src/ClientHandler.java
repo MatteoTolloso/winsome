@@ -112,8 +112,8 @@ public class ClientHandler implements Runnable {
                         rewindpostHandler(tokenizer, outToClient);
                         break;
                     }
-                    case "ratepost":{
-                        ratepostHandler(tokenizer, outToClient);;
+                    case "rate":{
+                        rateHandler(tokenizer, outToClient);;
                         break;
                     }
                     case "comment":{
@@ -154,10 +154,8 @@ public class ClientHandler implements Runnable {
 
         } 
         catch (IOException e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             System.out.println("connessione terminata");
-
-            return;
         }
         
         try {
@@ -304,7 +302,7 @@ public class ClientHandler implements Runnable {
 
     }
 
-    void ratepostHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
+    void rateHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
         StringBuilder response = new StringBuilder();
 
         if (tokenizer.countTokens() < 2){

@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.InvalidPathException;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Parametri {
 
@@ -27,7 +28,18 @@ public class Parametri {
     private  int timeout = 0;
 
     //cartella dove eseguire backup e ripristino dello stato del server
-    String backupFolder = ".";
+    private String backupFolder = ".";
+
+    // mappa che associa ad un nome utente l'interfaccia per la RMI callback
+    private ConcurrentHashMap<String, FollowerServiceClient> callbackMap = new ConcurrentHashMap<String, FollowerServiceClient>();
+
+    // database del server
+    private Database db = new Database(); 
+
+    // percentuale di ricompensa da assegnare al creatore del post
+    private double percentualeAutore = 0.7;
+
+
 
     public Parametri(){}
 
@@ -40,11 +52,12 @@ public class Parametri {
         
         String line;
         while( (line = inReader.readLine()) != null){
+
             if(line.length() == 0) continue; // ignora le righe vuote
             if(line.charAt(0) == '#') continue; // ignora le righe che iniziano con #
 
             StringTokenizer tokens = new StringTokenizer(line, "=");
-            String type = tokens.nextToken();
+            String type = tokens.nextToken();        
 
             switch(type){
                 case "registryPort":{
@@ -52,7 +65,7 @@ public class Parametri {
                     this.registryPort = Integer.parseInt(regport);
                     break;
                 }
-                case "perido":{
+                case "periodo":{
                     String per = tokens.nextToken();
                     this.periodo = Long.parseLong(per);
                     break;
@@ -87,6 +100,10 @@ public class Parametri {
                     this.backupFolder = bckfol;
                     break;
                 }
+                case "percentualeAutore":{
+                    String perc = tokens.nextToken();
+                    this.percentualeAutore = Double.parseDouble(perc);
+                }
             }
         }
         inReader.close();
@@ -112,5 +129,17 @@ public class Parametri {
     }
     public int getTimeout() {
         return timeout;
+    }
+    public ConcurrentHashMap<String, FollowerServiceClient> getCallbackMap() {
+        return callbackMap;
+    }
+    public Database getDb() {
+        return db;
+    }
+    public double getPercentualeAutore() {
+        return percentualeAutore;
+    }
+    public String getBackupFolder() {
+        return backupFolder;
     }
 }

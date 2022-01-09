@@ -1,10 +1,7 @@
 
 import java.io.*;
-import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
+import java.nio.file.InvalidPathException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -13,40 +10,45 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-import javax.management.loading.MLet;
-
-
 public class ClientMain{
 
+    private static Parametri parametri;
 
-    private static int registryPort = 8888;
-    private static String hostname = "127.0.0.1";
-    private static int hostport = 9999;
     private static String TER = "\r\n";
     private static ArrayList<String> followers = new ArrayList<String>();
-    private static String username;
-    private static String password;
-
+    private static String username = null;
+    private static String password = null;
+    private static Socket server;
+    private static DataOutputStream outToServer;
+    private static BufferedReader inFromServer;
 
     
     public static void main(String[] args){
 
         System.out.println("Client avviato");
 
+        parametri = new Parametri();
 
-        try (Socket server = new Socket(hostname, hostport);
-            DataOutputStream outToClient = new DataOutputStream(server.getOutputStream());
-            BufferedReader inFromClient = new BufferedReader(new InputStreamReader(server.getInputStream()))
-            ){
+        try {
+            parametri.parseParametri("config.txt");
+        } catch (InvalidPathException | NumberFormatException | IOException e1) {
+            System.err.println("Impossibile leggere i parametri di avvio");
+            System.exit(0);
+        }
+
+        try {
 
             BufferedReader commandLine = new BufferedReader(new InputStreamReader(System.in));
             StringBuilder request = null;
             String reqType = null;
+            Boolean wasLogged = false;
+            Boolean connected = false;
 
             do{
                 
                 System.out.print("< ");
                 String line = commandLine.readLine();
+                line = compactReq(line);
                 StringTokenizer token;
                 try{
                     token = new StringTokenizer(line);
@@ -68,59 +70,140 @@ public class ClientMain{
                     continue;
                 }
 
+                if(!connected) {
+                    connect();
+                    connected = true;
+                }
+
                 request = new StringBuilder();
                 request.append( line ).append(TER);
-                
-                outToClient.writeBytes(request.toString()); // da implementare login passivo
 
-                StringBuilder response = new StringBuilder();
-                response.append(inFromClient.readLine());  // prima  riga della risposta che contiene il numero di byte
+                try{
+                    outToServer.writeBytes(request.toString());
+                } catch(IOException e){ 
+                   if(wasLogged && connected){   // se ero loggato provo a riconnetermi e riloggarmi
+                        connect();
+                        loginAgain();
+                        registerForCallback();
+                        // e poi proseguo con la richesta normale
+                        outToServer.writeBytes(request.toString());
+                   }
+                   else throw new IOException();// se non ero loggato propago l'eccezione e termino
+                }
+                
+                String responseReader = inFromServer.readLine();  // prima  riga della risposta che contiene il numero di byte
                 int remaining;  
                 try{
-                    remaining = Integer.parseInt(response.toString()); // byte rimaneneti
+                    remaining = Integer.parseInt(responseReader.toString()); // byte rimaneneti
                 }catch(Exception e){
                     throw new IOException();
                 }
-                                
-                do{     
-                    
-                    response.append(inFromClient.readLine());
-                    remaining = remaining - (response.length() + 2); // sottraggo anche il carattere newline
-                    System.out.println("> "  +response);
 
+                StringBuilder responseFormatted = new StringBuilder();
+                do{       
+                    responseReader = inFromServer.readLine();
+                    responseFormatted.append("> ").append(responseReader).append("\n");
+                    remaining = remaining - (responseReader.length() + 2); // sottraggo anche il carattere newline
                 } while(remaining > 0); //leggo la risposta finche ho ancora byte da leggere
-    
-                if(reqType.equals("login") && response.toString().contains("OK")){   // se c'è stata una richiesta di login andata a buon fine
-                    StringTokenizer newToken = new StringTokenizer(line);// parso username e password
+                
+                System.out.println(responseFormatted.toString());
+
+                if(reqType.equals("login") && responseReader.contains("OK")){   // se c'è stata una richiesta di login andata a buon fine
+                    StringTokenizer newToken = new StringTokenizer(line);// parso username e password dalla richiesta
                     newToken.nextToken();
                     username = newToken.nextToken();
                     password = newToken.nextToken();
+                    wasLogged = true;
                     registerForCallback();  // mi registro per la callback
                 }
-                if(reqType.equals("multicastaddress") && response.toString().contains("OK")){
-                    StringTokenizer newToken = new StringTokenizer(response.toString());
-                    String multicastAddr = newToken.nextToken();
+                if(reqType.equals("multicast")){    // richesta di multicast
+                    StringTokenizer newToken = new StringTokenizer(responseReader.toString());
+                    String multicastAddr = newToken.nextToken();    // parso indirizzo e porta dalla risposta
                     int multicastPort = Integer.parseInt(newToken.nextToken());
-                    (new MulticastReciver(multicastAddr, multicastPort)).start();
+                    (new MulticastReciver(multicastAddr, multicastPort)).start();// avvio un thread che ascolta il multicast
                 }
                 
             }while (! (reqType.equals("logout")));
 
             server.close();
-
+            outToServer.close();
+            inFromServer.close();
+            System.exit(0);
 
         } catch (IOException e) {
             
-            e.printStackTrace();
+            System.out.println("Disconnesso");
+            System.exit(0);
         }
         
+    }
+
+    private static String compactReq(String req){
+
+        try{
+            if(req.contains("show post")){
+                StringTokenizer token = new StringTokenizer(req);
+                token.nextToken();
+                token.nextToken();
+                return "showpost" + " " + token.nextToken();
+            }
+            if(req.contains("list users")){
+                return "listusers";
+            }
+            if(req.contains("list followers")){
+                return "listfollowers";
+            }
+            if(req.contains("list following")){
+                return "listfollowing";
+            }
+            if(req.contains("show feed")){
+                return "showfeed";
+            }
+            if(req.contains("wallet btc")){
+                return "walletbtc";
+            }
+        }catch(Exception e){
+            
+        }
+
+        return req;
+        
+    }
+
+    private static void connect() throws IOException{
+        server = new Socket(parametri.getServerAddr(), parametri.getServerPort());
+        outToServer = new DataOutputStream(server.getOutputStream());
+        inFromServer = new BufferedReader(new InputStreamReader(server.getInputStream()));
+    }
+
+    private static void loginAgain() throws IOException{
+
+        StringBuilder req = new StringBuilder();
+        req.append("login").append(" ").append(username).append(" ").append(password).append("\n");
+        outToServer.writeBytes(req.toString());
+
+        String responseReader = inFromServer.readLine(); 
+        int remaining;  
+        try{
+            remaining = Integer.parseInt(responseReader.toString()); // byte rimaneneti
+        }catch(Exception e){
+            throw new IOException();
+        }
+        StringBuilder responseFormatted = new StringBuilder();
+        do{     
+            responseReader = inFromServer.readLine();
+            responseFormatted.append("> ").append(responseReader).append("\n");
+            remaining = remaining - (responseReader.length() + 2);
+        } while(remaining > 0);
+        if(!responseReader.contains("OK")) throw new IOException();
+
     }
 
     private static void registerForCallback(){
         FollowerServiceServer serverObject;
 
         try {
-            Registry r = LocateRegistry.getRegistry(registryPort);
+            Registry r = LocateRegistry.getRegistry(parametri.getRegistryPort());
             serverObject = (FollowerServiceServer) r.lookup("followers");   // stub dell'oggetto che mi permette la registrazione
             
         } catch (RemoteException | NotBoundException | NullPointerException  e) {
@@ -184,7 +267,7 @@ public class ClientMain{
         RegistrationService serverObject;
 
         try {
-            Registry r = LocateRegistry.getRegistry(registryPort);
+            Registry r = LocateRegistry.getRegistry(parametri.getRegistryPort());
             
             serverObject = (RegistrationService) r.lookup("register");
             

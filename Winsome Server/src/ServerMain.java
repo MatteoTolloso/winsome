@@ -10,9 +10,6 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -20,19 +17,20 @@ import java.util.concurrent.TimeUnit;
 
 public class ServerMain{
     
-    private static Database db = new Database(); 
-    private static ConcurrentHashMap<String, FollowerServiceClient> callbackMap = new ConcurrentHashMap<String, FollowerServiceClient>();
-    private static Parametri  parametri = new Parametri();
+    private static Parametri parametri = new Parametri();
     
     public static void main(String args[]){
+        
         
         System.err.println("Preparo l'avvio del server...");
         try{
             
             parametri.parseParametri("./config.txt");
-           
+
+            Runtime.getRuntime().addShutdownHook(new Terminazione(parametri.getDb(), parametri.getBackupFolder()));
+
             try{
-                db.jsonRestore(parametri.backupFolder);
+                parametri.getDb().jsonRestore(parametri.getBackupFolder());
             }catch(InvalidPathException e){
                 System.err.println("Nessuno stato di partenza");
             }
@@ -51,12 +49,16 @@ public class ServerMain{
             System.exit(0);
         }
         
-        
-        
     }
 
+
+
+
+
+    
+
     private static void startDaemon(){
-        (new Daemon(db, parametri.getMulticastAddr(), parametri.getMulticastPort(), parametri.getPeriodo())).start();
+        (new Daemon(parametri.getDb(), parametri.getMulticastAddr(), parametri.getMulticastPort(), parametri.getPeriodo(), parametri.getPercentualeAutore())).start();
     }
 
     private static void startMulticast() throws UnknownHostException, IllegalArgumentException{
@@ -73,10 +75,10 @@ public class ServerMain{
     private static void startRMI(){
 
         try {
-            RegistrationServiceImp registrationServiceObj = new RegistrationServiceImp(db);    // istanza dell'oggetto che permette la registrazione al social
+            RegistrationServiceImp registrationServiceObj = new RegistrationServiceImp(parametri.getDb());    // istanza dell'oggetto che permette la registrazione al social
             RegistrationService registrationServiceStub = (RegistrationService)UnicastRemoteObject.exportObject(registrationServiceObj, 0);  // esporto l'oggetto
 
-            FollowersServiceServerImp followerServiceServerObj = new FollowersServiceServerImp(db, callbackMap);
+            FollowersServiceServerImp followerServiceServerObj = new FollowersServiceServerImp(parametri.getDb(), parametri.getCallbackMap());
             FollowerServiceServer followerServiceServerStub = (FollowerServiceServer)UnicastRemoteObject.exportObject(followerServiceServerObj, 0);
 
             Registry registry = LocateRegistry.createRegistry(parametri.getRegistryPort());    // creo un registro
@@ -94,7 +96,7 @@ public class ServerMain{
 
     private static void startSterver(){
 
-        ExecutorService pool = new ThreadPoolExecutor(8, 64, 3, TimeUnit.SECONDS,  new LinkedBlockingQueue<Runnable>());
+        ExecutorService pool = new ThreadPoolExecutor(4, 64, 3, TimeUnit.SECONDS,  new LinkedBlockingQueue<Runnable>());
         ServerSocket server;
         try {
             server = new ServerSocket();
@@ -103,7 +105,7 @@ public class ServerMain{
 			while (true) {
 				Socket client = server.accept();
                 System.out.println("nuova connessione");
-				pool.execute(new ClientHandler(client, db, callbackMap, parametri.getMulticastAddr(),
+				pool.execute(new ClientHandler(client, parametri.getDb(), parametri.getCallbackMap(), parametri.getMulticastAddr(),
                             parametri.getMulticastPort(), parametri.getTimeout()));
 			}
             
@@ -114,7 +116,7 @@ public class ServerMain{
         
 		
 
-        // controllo della terminazione
+        // TODO controllo della terminazione
         pool.shutdown();
         try {
             while(!pool.isTerminated())
@@ -125,6 +127,9 @@ public class ServerMain{
         }
 		
 	}
+}
+
+    /*
 
     public static void test() throws NullPointerException, UserAlrExiException, InvalidUsernameException, UserNotFoundException, PostNotFoundException, NotAllowedException{
 
@@ -553,3 +558,4 @@ public class ServerMain{
     }
 
 }
+*/

@@ -11,21 +11,27 @@ public class Daemon extends Thread {
 
 
     private Database db;
-    private double precetualeAutore = 0.7;
     private String multicastAddr;
     private int multicasPort;
     private long periodo;
+    private double percentualeAutore;
 
-    public Daemon(Database db, String multicastAddr, int multicasPort, long periodo){
+    public Daemon(Database db, String multicastAddr, int multicasPort, long periodo, double percentualeAutore){
         this.db = db;
         this.multicastAddr = multicastAddr;
         this.multicasPort = multicasPort;
         this.periodo = periodo;
+        this.percentualeAutore = percentualeAutore;
     }
 
     public void run(){
-
         while(true){
+
+            try {
+                Thread.sleep(periodo);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
             calcolaRicompense();
 
@@ -39,12 +45,6 @@ public class Daemon extends Thread {
             
             System.out.println("Periodo terminato: ricomense calcolate, notifiche inviate, backup effettuato");
             
-            try {
-                Thread.sleep(periodo);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
         }
 
     }
@@ -79,7 +79,7 @@ public class Daemon extends Thread {
             if(guadagno <= 0) continue; // il post non ha generato incassi
 
             // ricompensa l'autore del post
-            double ricompensaAutore = guadagno*precetualeAutore;
+            double ricompensaAutore = guadagno*percentualeAutore;
             
             try {   
                 db.addToWallet(p.getAuthor(), ricompensaAutore);
@@ -95,7 +95,7 @@ public class Daemon extends Thread {
 
             if(curatori.size() == 0) continue;// in questo caso non c'è nessun curatore
 
-            double ricompesaCuratore = (guadagno*(1-precetualeAutore)) / curatori.size();
+            double ricompesaCuratore = (guadagno*(1-percentualeAutore)) / curatori.size();
 
             for(String utente : curatori){ // ricompensa i curatori che hanno commentato
                 try {

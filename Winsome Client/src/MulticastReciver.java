@@ -11,10 +11,14 @@ public class MulticastReciver extends Thread{
     private InetAddress group;
     private int LEN = 2048;
 
-    public MulticastReciver(String addr, int port) throws UnknownHostException{
+    public MulticastReciver(String addr, int port){
         this.multicastAddr = addr;
         this.multicastPort = port;
-        this.group = InetAddress.getByName(multicastAddr);
+        try {
+            this.group = InetAddress.getByName(multicastAddr);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
     }
 
     public void run(){
@@ -27,7 +31,8 @@ public class MulticastReciver extends Thread{
                 multSock.joinGroup(this.group);
                 DatagramPacket dat = new DatagramPacket(new byte[LEN], LEN);
                 multSock.receive(dat);
-                System.out.println("> Comunicazione dal server: " + new String(dat.getData(), dat.getOffset(), dat.getLength()));
+                System.out.print("\n> Comunicazione dal server: " + new String(dat.getData(), dat.getOffset(), dat.getLength()));
+                System.out.print("\n< ");
 
             }
             catch(IOException e){

@@ -94,7 +94,6 @@ public class Post {
         if(userID == null || comment == null) return;
         comments.add(new Comment(userID, comment));
     }
-
     public synchronized ArrayList<String> getNewUpvote(){
         ArrayList<String> newUpvote =  new ArrayList<String>(upVote.subList(upVoteIndex, upVote.size()));
         upVoteIndex = upVote.size();
