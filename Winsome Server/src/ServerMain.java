@@ -20,12 +20,16 @@ public class ServerMain{
     private static Parametri parametri = new Parametri();
     
     public static void main(String args[]){
-        
-        
+
+        if(args.length < 1){
+            System.err.println("Devi passare come argomento da linea di comando il path del file di configurazione");
+            System.exit(0);
+        }
+          
         System.err.println("Preparo l'avvio del server...");
         try{
             
-            parametri.parseParametri("./config.txt");
+            parametri.parseParametri(args[0]);
 
             Runtime.getRuntime().addShutdownHook(new Terminazione(parametri.getDb(), parametri.getBackupFolder()));
 
@@ -55,7 +59,7 @@ public class ServerMain{
 
 
 
-    
+
 
     private static void startDaemon(){
         (new Daemon(parametri.getDb(), parametri.getMulticastAddr(), parametri.getMulticastPort(), parametri.getPeriodo(), parametri.getPercentualeAutore())).start();
