@@ -1,5 +1,5 @@
 
 
-registryPort=8888
+registryPort=50000
 serverAddr=127.0.0.1
-serverPort=9999
+serverPort=50002

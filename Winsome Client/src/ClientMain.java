@@ -25,12 +25,17 @@ public class ClientMain{
     
     public static void main(String[] args){
 
+        if(args.length < 1){
+            System.err.println("Devi passare come argomento da linea di comando il path del file di configurazione");
+            System.exit(0);
+        }
+
         System.out.println("Client avviato");
 
         parametri = new Parametri();
 
         try {
-            parametri.parseParametri("config.txt");
+            parametri.parseParametri(args[0]);
         } catch (InvalidPathException | NumberFormatException | IOException e1) {
             System.err.println("Impossibile leggere i parametri di avvio");
             System.exit(0);
@@ -135,7 +140,7 @@ public class ClientMain{
             System.out.println("Disconnesso");
             System.exit(0);
         }
-        
+    
     }
 
     private static String compactReq(String req){
