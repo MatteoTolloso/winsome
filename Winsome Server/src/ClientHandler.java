@@ -236,7 +236,7 @@ public class ClientHandler implements Runnable {
 
     }
 
-    void walletHandler(DataOutputStream outToClient) throws IOException{
+    private void walletHandler(DataOutputStream outToClient) throws IOException{
         StringBuilder response = new StringBuilder();
 
         try {
@@ -261,7 +261,7 @@ public class ClientHandler implements Runnable {
 
     }
 
-    void commentHandler(String messageLine, StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
+    private void commentHandler(String messageLine, StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
         
         StringBuilder response = new StringBuilder();
         StringTokenizer tokenizer2 = new StringTokenizer(messageLine, "\"");
@@ -302,7 +302,7 @@ public class ClientHandler implements Runnable {
 
     }
 
-    void rateHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
+    private void rateHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
         StringBuilder response = new StringBuilder();
 
         if (tokenizer.countTokens() < 2){
@@ -348,7 +348,7 @@ public class ClientHandler implements Runnable {
 
     }
 
-    void rewindpostHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
+    private void rewindpostHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
 
         StringBuilder response = new StringBuilder();
 
@@ -388,7 +388,7 @@ public class ClientHandler implements Runnable {
 
     }
 
-    void deleteHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
+    private void deleteHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
         
         StringBuilder response = new StringBuilder();
 
@@ -429,7 +429,7 @@ public class ClientHandler implements Runnable {
 
     }
 
-    void showpostHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
+    private void showpostHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
 
         StringBuilder response = new StringBuilder();
 
@@ -473,7 +473,7 @@ public class ClientHandler implements Runnable {
 
     }
 
-    void showfeedHandler(DataOutputStream outToClient)throws IOException{
+    private void showfeedHandler(DataOutputStream outToClient)throws IOException{
 
         StringBuilder response = new StringBuilder();
 
@@ -501,7 +501,7 @@ public class ClientHandler implements Runnable {
 
     }
 
-    void postHaldler(String messageLine, DataOutputStream outToClient) throws IOException{  // da testare
+    private void postHaldler(String messageLine, DataOutputStream outToClient) throws IOException{  // da testare
 
         StringBuilder response = new StringBuilder();
 
@@ -547,7 +547,7 @@ public class ClientHandler implements Runnable {
 
     }
 
-    void viewblogHandler(DataOutputStream outToClient) throws IOException{
+    private void viewblogHandler(DataOutputStream outToClient) throws IOException{
 
         StringBuilder response = new StringBuilder();
 
@@ -575,7 +575,7 @@ public class ClientHandler implements Runnable {
 
     }
 
-    void unfollowHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
+    private void unfollowHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
         StringBuilder response = new StringBuilder();
 
         if(tokenizer.countTokens() < 1){    // argomenti errati
@@ -627,7 +627,7 @@ public class ClientHandler implements Runnable {
         return;
     }
 
-    void followHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
+    private void followHandler(StringTokenizer tokenizer, DataOutputStream outToClient) throws IOException{
 
         StringBuilder response = new StringBuilder();
 
@@ -684,7 +684,7 @@ public class ClientHandler implements Runnable {
 
     }
 
-    void listfollowingHandler(DataOutputStream outToClient) throws IOException{
+    private void listfollowingHandler(DataOutputStream outToClient) throws IOException{
         
         StringBuilder response = new StringBuilder();
         ArrayList<String> users;
@@ -706,7 +706,7 @@ public class ClientHandler implements Runnable {
 
     }
 
-    void listusersHandler(DataOutputStream outToClient)throws IOException {
+    private void listusersHandler(DataOutputStream outToClient)throws IOException {
 
         StringBuilder response = new StringBuilder();
 
@@ -740,7 +740,7 @@ public class ClientHandler implements Runnable {
         
     }
 
-    void noLoginHandler(DataOutputStream outToClient) throws IOException{
+    private void noLoginHandler(DataOutputStream outToClient) throws IOException{
 
         StringBuilder response = new StringBuilder();
         response.append("Devi prima effettuare il login").append(NEW);
@@ -749,7 +749,7 @@ public class ClientHandler implements Runnable {
         
     }
 
-    void noValidHandler(DataOutputStream outToClient) throws IOException{
+    private void noValidHandler(DataOutputStream outToClient) throws IOException{
 
         StringBuilder response = new StringBuilder();
         response.append("Comando non disponibile").append(NEW);
@@ -758,7 +758,7 @@ public class ClientHandler implements Runnable {
         
     }
 
-    void loginHandler(StringTokenizer tokenizer, DataOutputStream outToClient)throws IOException{
+    private void loginHandler(StringTokenizer tokenizer, DataOutputStream outToClient)throws IOException{
 
         StringBuilder response = new StringBuilder();
 

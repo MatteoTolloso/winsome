@@ -1,14 +1,14 @@
 
-registryPort=8888
+registryPort=50000
 
 # espresso in millisecondi
 periodo=60000
 
 multicastAddr=239.255.1.3
-multicastPort=9998
+multicastPort=50001
 
 serverAddr=127.0.0.1
-serverPort=9999
+serverPort=50002
 
 timeout=10000
 
