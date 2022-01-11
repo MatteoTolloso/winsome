@@ -57,12 +57,11 @@ public class ClientMain{
                 StringTokenizer token;
                 try{
                     token = new StringTokenizer(line);
+                    reqType = token.nextToken();
                 }
                 catch(NullPointerException e){
                     continue;
                 }
-
-                reqType = token.nextToken();
 
                 if(reqType.equals("listfollowers")){ // gestita localmente
                     for(String s : followers){
@@ -286,7 +285,7 @@ public class ClientMain{
             serverObject.register(username, password, tags);
         }
         catch(Exception | UserAlrExiException | InvalidUsernameException e){
-            System.out.println("> Questo utente già esiste");
+            System.out.println("> Username non valido");
             return;
         }
 
