@@ -399,6 +399,7 @@ public class Database {
         return usr.getTransactions();   // clone fatta da Utente
     }
 
+    // effettua un backup del server
     public void jsonBackup(String dirPath) throws NullPointerException, InvalidPathException, IOException{
 
         if (dirPath == null) throw new NullPointerException();
@@ -452,6 +453,7 @@ public class Database {
 		
     }
 
+    // ripristina un backup precedente
     public void jsonRestore(String dirPath)  throws NullPointerException, InvalidPathException, IOException{
         
         if (dirPath == null) throw new NullPointerException();
@@ -513,6 +515,7 @@ public class Database {
         }
     }
 
+    // questo utente esiste?
     Boolean existsUser(String username)throws NullPointerException{
 
         if(username == null) throw new NullPointerException();
@@ -521,6 +524,7 @@ public class Database {
 
     }
 
+    // password di un utente
     String getPassword(String username) throws NullPointerException{
 
         if(username == null) throw new NullPointerException();
@@ -528,7 +532,7 @@ public class Database {
         return usersMap.get(username).getPassword();
     }
 
-
+    // ritorna i tags dell'utente
     ArrayList<String> getTags(String username) throws NullPointerException, UserNotFoundException{
 
         if(username == null) throw new NullPointerException();
@@ -539,6 +543,7 @@ public class Database {
 
     }
 
+    // aggiunge al wallet una transazione 
     void addToWallet(String username, double incremento) throws NullPointerException, UserNotFoundException{
         if(username == null) throw new NullPointerException();
         if(!usersMap.containsKey(username)) throw new UserNotFoundException();
@@ -546,6 +551,7 @@ public class Database {
         usersMap.get(username).addTransaction(incremento);
     }
 
+    // ritorna tutti i post
     ArrayList<Post> getAllPosts(){
 
         return new ArrayList<Post>(this.postMap.values());

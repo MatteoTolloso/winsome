@@ -45,7 +45,7 @@ public class ClientHandler implements Runnable {
 
             do{
             
-                requestMessageLine = inFromClient.readLine();
+                requestMessageLine = inFromClient.readLine();   // leggi la richiesta
 
                 if (requestMessageLine == null) {
                     System.out.println("stringa nulla");    // il client ha chiuso
@@ -62,6 +62,7 @@ public class ClientHandler implements Runnable {
                 StringTokenizer tokenizer = new StringTokenizer(requestMessageLine);
                 requestType = tokenizer.nextToken();
 
+                // la prima richiesta deve essere login
                 if((username == null) && (!requestType.equals("login") ) && (!requestType.equals("logout"))) {
                     noLoginHandler(outToClient);
                     continue;
