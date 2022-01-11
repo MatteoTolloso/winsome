@@ -17,7 +17,7 @@ public class RegistrationServiceImp implements RegistrationService{
 
         //trasforma tutte le stringhe il lower case
         ArrayList<String> tagsLower = (ArrayList<String>) tags.stream().map(String::toLowerCase).collect(Collectors.toList());
-        
+        System.err.println("Richiesta ricevuta: register "+ username + " " + password + " " + tags.toString());;
         db.register(username, password, tagsLower);
 
     }
